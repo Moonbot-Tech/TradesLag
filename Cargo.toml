@@ -1,0 +1,22 @@
+[package]
+name = "lagwatch"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.96"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[dependencies]
+anyhow = "1"
+crossbeam-queue = "0.3"
+libc = "0.2"
+png = "0.17"
+serde_json = "1"
+signal-hook = "0.3"
+tiny_http = "0.12"
+tungstenite = { version = "0.24", features = ["native-tls"] }
+ureq = { version = "2.10", features = ["json"] }

@@ -1,0 +1,5 @@
+/target/
+*.log
+*.tmp
+lagwatch-charts.bin
+charts.bin
