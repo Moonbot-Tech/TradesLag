@@ -331,7 +331,8 @@ impl HourArchive {
         let old_layer = packed_get(&self.layers, pixel);
 
         if old_layer == 0 {
-            self.sec_scores[sec_slot] = self.sec_scores[sec_slot].saturating_add(self.row_score(row));
+            self.sec_scores[sec_slot] =
+                self.sec_scores[sec_slot].saturating_add(self.row_score(row));
             packed_set(&mut self.layers, pixel, point.layer);
         } else if point.layer > old_layer {
             packed_set(&mut self.layers, pixel, point.layer);
@@ -377,11 +378,7 @@ impl HourArchive {
         windows
     }
 
-    fn best_window(
-        &self,
-        now_sec: i64,
-        exclude: Option<(i64, i64)>,
-    ) -> Option<TopLagWindow> {
+    fn best_window(&self, now_sec: i64, exclude: Option<(i64, i64)>) -> Option<TopLagWindow> {
         let oldest_start = now_sec - WEEK_SECONDS as i64 + 1;
         let newest_start = now_sec - HOUR_SECONDS as i64 + 1;
         if newest_start < oldest_start {
@@ -403,7 +400,8 @@ impl HourArchive {
             if !overlaps && score > 0 {
                 let replace = best
                     .map(|current| {
-                        score > current.score || (score == current.score && start > current.start_sec)
+                        score > current.score
+                            || (score == current.score && start > current.start_sec)
                     })
                     .unwrap_or(true);
                 if replace {
@@ -471,13 +469,7 @@ impl HourArchive {
         encode_png(render_width, self.height, &rgba)
     }
 
-    fn load(
-        &mut self,
-        last_second: i64,
-        height: usize,
-        scores: &[u64],
-        layers: &[u8],
-    ) {
+    fn load(&mut self, last_second: i64, height: usize, scores: &[u64], layers: &[u8]) {
         let expected_len = packed_len(WEEK_SECONDS * self.height);
         if height != self.height || scores.len() != WEEK_SECONDS || layers.len() != expected_len {
             return;
@@ -1090,7 +1082,10 @@ fn binance_ingest_loop(state: Arc<AppState>) {
             Ok(()) => set_status(&state, "binance reconnecting"),
             Err(err) => set_status(&state, &format!("binance ingest error: {err:#}")),
         }
-        state.stats.binance_connected.store(false, Ordering::Relaxed);
+        state
+            .stats
+            .binance_connected
+            .store(false, Ordering::Relaxed);
         thread::sleep(reconnect_delay);
         reconnect_delay = if started.elapsed() > Duration::from_secs(60) {
             Duration::from_secs(2)
@@ -1135,7 +1130,10 @@ fn run_binance_ingest_once(state: &Arc<AppState>) -> Result<()> {
         .store(symbols.tradfi_count, Ordering::Relaxed);
 
     let url = format!("{}{}", BINANCE_WS_BASE, symbols.streams.join("/"));
-    set_status(state, &format!("binance connecting {} streams", symbols.streams.len()));
+    set_status(
+        state,
+        &format!("binance connecting {} streams", symbols.streams.len()),
+    );
 
     let (mut socket, _) = connect(url.as_str()).context("connect binance websocket")?;
     set_ws_timeouts(&mut socket).context("set binance websocket timeouts")?;
@@ -1197,7 +1195,10 @@ fn run_bybit_ingest_once(state: &Arc<AppState>) -> Result<()> {
         .iter()
         .map(|symbol| format!("publicTrade.{symbol}"))
         .collect();
-    state.stats.bybit_symbols.store(args.len(), Ordering::Relaxed);
+    state
+        .stats
+        .bybit_symbols
+        .store(args.len(), Ordering::Relaxed);
     let binance_streams = fetch_binance_stream_count(state);
     state
         .stats
@@ -1357,7 +1358,10 @@ fn fetch_binance_symbols() -> Result<SymbolSet> {
         let Some(name) = symbol.get("symbol").and_then(Value::as_str) else {
             continue;
         };
-        let status = symbol.get("status").and_then(Value::as_str).unwrap_or_default();
+        let status = symbol
+            .get("status")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
         if status != "TRADING" {
             continue;
         }
@@ -1522,10 +1526,10 @@ fn metrics_loop(state: Arc<AppState>) {
             &mut msg_samples,
             (messages.saturating_sub(last_messages)) as f64 / elapsed,
         );
-        state
-            .stats
-            .msg_per_sec_x100
-            .store((avg_sample(&msg_samples) * 100.0).round() as u64, Ordering::Relaxed);
+        state.stats.msg_per_sec_x100.store(
+            (avg_sample(&msg_samples) * 100.0).round() as u64,
+            Ordering::Relaxed,
+        );
         last_messages = messages;
         last_time = now;
 
@@ -1533,12 +1537,13 @@ fn metrics_loop(state: Arc<AppState>) {
             let total_delta = next.total.saturating_sub(prev.total);
             let idle_delta = next.idle.saturating_sub(prev.idle);
             if total_delta > 0 {
-                let busy = total_delta.saturating_sub(idle_delta) as f64 * 100.0 / total_delta as f64;
+                let busy =
+                    total_delta.saturating_sub(idle_delta) as f64 * 100.0 / total_delta as f64;
                 push_sample(&mut cpu_samples, busy.clamp(0.0, 100.0));
-                state
-                    .stats
-                    .cpu_vps_x100
-                    .store((avg_sample(&cpu_samples) * 100.0).round() as u64, Ordering::Relaxed);
+                state.stats.cpu_vps_x100.store(
+                    (avg_sample(&cpu_samples) * 100.0).round() as u64,
+                    Ordering::Relaxed,
+                );
             }
             last_cpu = Some(next);
         }
@@ -1815,7 +1820,10 @@ fn respond_top_chart(
     target_width: Option<usize>,
 ) -> Result<()> {
     let (_, windows) = top_lag_snapshot(state);
-    let start_sec = windows.get(index).and_then(|window| *window).map(|w| w.start_sec);
+    let start_sec = windows
+        .get(index)
+        .and_then(|window| *window)
+        .map(|w| w.start_sec);
     let chart = {
         let archive = state
             .hour_archive
@@ -1963,9 +1971,7 @@ fn chart_max_lag_ms(state: &Arc<AppState>, name: &str) -> i64 {
 }
 
 fn chart_meta(now_ms: i64, width: usize, height: usize, bucket_ms: i64) -> Value {
-    let cursor = now_ms
-        .div_euclid(bucket_ms)
-        .rem_euclid(width as i64) as usize;
+    let cursor = now_ms.div_euclid(bucket_ms).rem_euclid(width as i64) as usize;
     json!({
         "width": width,
         "height": height,

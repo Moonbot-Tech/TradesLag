@@ -1,0 +1,14 @@
+* text=auto eol=lf
+/.gitattributes text eol=lf
+*.sh text eol=lf
+Makefile text eol=lf
+
+*.bmp binary
+*.gif binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.svg text eol=lf
+*.ttf binary
+*.webp binary
